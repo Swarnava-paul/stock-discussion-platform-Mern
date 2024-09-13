@@ -8,12 +8,11 @@ UserProfileRouter.use(express.json());
 UserProfileRouter.get('/profile/:userId',async(req,res)=>{
 const userid =  req.params.userId;
 const user = await UserModel.findOne({userId:userid});
-const {_id,userId,name, profilePicture} = user;
 
 if(!user) {
   return res.status(200).json({message:"No User Found"})
 }
-
+const {_id,userId,name, profilePicture} = user;
 return res.status(200).json({ _id, userName : userId, name , profilePicture  })
 
 }) // handles to get basic user profile info 
