@@ -18,4 +18,10 @@ const sortFunction = (sortBy) => {
     return dynamicSortingKey;
 }
 
+/**
+ this function takes sortBy as a parameter and 
+ split that and check the value of sortType and sortOrder based on calculation it will return
+ a object with key associated match with database key and for asc it 
+ */
+
 module.exports = sortFunction;

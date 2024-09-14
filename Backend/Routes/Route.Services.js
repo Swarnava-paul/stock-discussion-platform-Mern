@@ -1,5 +1,7 @@
 const express = require('express');
 const PostModel = require('../Models/PostModel');
+const UserModel = require('../Models/UserModel');
+const LikeModel = require('../Models/LikeModel');
 
 const ServiceRouter = express.Router();
 ServiceRouter.use(express.json());
@@ -91,6 +93,35 @@ ServiceRouter.delete('/:postId',async(req,res)=>{
      res.status(500).json({message:"Internal Server Error"});
     }
 }) // handles the logic of delete post from db by using post id
+
+ServiceRouter.post('/:postId/like',async(req,res)=>{
+    try{
+        const {postId} = req.params;
+        const {user:{_id}} = req; // _id from authorization token from authChecking middleware
+        const {userId,profilePicture} = await UserModel.findOne({_id}); // use _id to retrive userId & profilepictore
+
+        const likedPost = await LikeModel.findOne({postId,likedBy:userId}); // find like document 
+    
+       if(!likedPost) {
+        const like = await LikeModel.create({postId,likedBy:userId,profilePicture});
+        const increaseLikeInPost = await PostModel.updateOne({_id:postId},{$inc:{likesCount:1}});
+        if(like && increaseLikeInPost.modifiedCount == 1) {
+         res.status(200).json({ success: true, message: 'Post liked' });
+        }
+       } // if like is not present to that post id means have to create like and also increase like count
+        else {
+         const deleteLike = await LikeModel.deleteOne({postId,likedBy:userId});
+         const decreaseLikeInPost = await PostModel.updateOne({_id:postId},{$inc:{likesCount:-1}});
+         if(deleteLike.deletedCount == 1 && decreaseLikeInPost.modifiedCount == 1) {
+            res.status(200).json({ success: true, message: 'Post unliked' });
+         }
+       } // else is like document found means have to delete  like unlike and decrease like from that post
+
+    }catch(error) {
+        res.status(500).json({message:"Internal Server Error"});
+    }
+}) // handles the logic of like and unlike a post
+
 
 
 
