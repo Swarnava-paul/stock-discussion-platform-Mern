@@ -20,7 +20,7 @@ ServiceRouter.post('/',async(req,res)=>{
      const { stockSymbol,title,description , likesCount , commentsCount} = req.body;
 
      if(!stockSymbol || !title || !description ) {
-        return res.status(400).json({message:"No Body Provided"})
+        return res.status(404).json({message:"No Body Provided"})
      }
 
      const createPost = await PostModel.create({userId:user._id,title,stockSymbol,description,likesCount,commentsCount});
@@ -29,7 +29,7 @@ ServiceRouter.post('/',async(req,res)=>{
         return res.status(400).json({message:"Posting Failed"})
      }
 
-     return res.status(200).json({ success: true, postId : createPost._id , message: 'Post created successfully' });
+     return res.status(201).json({ success: true, postId : createPost._id , message: 'Post created successfully' });
 
     }catch(error) {
      res.status(500).json({message:"Internal Server Error"});
@@ -51,7 +51,7 @@ ServiceRouter.get('/',async(req,res)=>{
         .limit(pageLimit).sort(dynamicSortingKey)
 
         if(!posts) {
-            return res.status(200).json({message:"No Posts Found"})
+            return res.status(204).json({message:"No Posts Found"})
         }
 
         return res.status(200).json({posts});
@@ -64,7 +64,7 @@ ServiceRouter.get('/',async(req,res)=>{
         .limit(pageLimit).sort(dynamicSortingKey)
 
         if(!posts) {
-            return res.status(200).json({message:"No Posts Found"});
+            return res.status(204).json({message:"No Posts Found"});
         }
 
         return res.status(200).json({posts});
@@ -73,7 +73,7 @@ ServiceRouter.get('/',async(req,res)=>{
      const posts = await PostModel.find({}).skip(skipContent).limit(pageLimit); // incase of normal post fetching with out any sort
      
      if(!posts) {
-        return res.status(200).json({message:"No Posts Found"})
+        return res.status(204).json({message:"No Posts Found"})
      } // incase of normal post fetching with out any sort 
 
      return res.status(200).json({posts});
@@ -111,7 +111,7 @@ ServiceRouter.post('/:postId/like',async(req,res)=>{
         const like = await LikeModel.create({postId,likedBy:userId,profilePicture});
         const increaseLikeInPost = await PostModel.updateOne({_id:postId},{$inc:{likesCount:1}});
         if(like && increaseLikeInPost.modifiedCount == 1) {
-         res.status(200).json({ success: true, message: 'Post liked' });
+         res.status(201).json({ success: true, message: 'Post liked' });
         }
        } // if like is not present to that post id means have to create like and also increase like count
         else {
@@ -139,7 +139,7 @@ ServiceRouter.post('/:postId/comments',async(req,res)=>{
      const findPost = await PostModel.findOne({_id:postId});
      
      if(!findPost) {
-        return res.status(400).json({message:"No post Found"});
+        return res.status(204).json({message:"No post Found"});
      } // check first if post exist or not 
 
      const commentObject = {
@@ -195,7 +195,7 @@ ServiceRouter.get('/:postId',async(req,res)=>{
      const comments = await CommentModel.find({postId:postId}); // get all comments for that postId from comments collection
 
      if(!singlePost){
-      return res.status(200).json({message:"No Post Found"})
+      return res.status(404).json({message:"No Post Found"});
      } // no post there then
 
      const {_id:post_Id, stockSymbol, title, description, likesCount} = singlePost; // descructure from singlePost object
