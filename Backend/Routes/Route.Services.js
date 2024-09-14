@@ -4,6 +4,7 @@ const express = require('express');
 const PostModel = require('../Models/PostModel');
 const UserModel = require('../Models/UserModel');
 const LikeModel = require('../Models/LikeModel');
+const CommentModel = require('../Models/CommentModel');
 
 const ServiceRouter = express.Router();
 ServiceRouter.use(express.json());
@@ -124,6 +125,43 @@ ServiceRouter.post('/:postId/like',async(req,res)=>{
     }
 }) // handles the logic of like and unlike a post
 
+ServiceRouter.post('/:postId/comments',async(req,res)=>{
+    
+    try{
+     const {comment} = req.body;
+     const {postId} = req.params;
+     const {user:{_id,userId}} = req; // from middleware
+     const {profilePicture} = await UserModel.findOne({_id:_id}); //  retrive profile picture for storing comment
+     // and userId with profile picture to display comment with user id with profile picture in front-end
+
+     const findPost = await PostModel.findOne({_id:postId});
+     
+     if(!findPost) {
+        return res.status(400).json({message:"No post Found"});
+     } // check first if post exist or not 
+
+     const commentObject = {
+        postId,
+        commentBy:userId,
+        profilePicture,
+        comment,
+     } // comment to be posted and stored in db
+
+     const createComment = await CommentModel.create(commentObject); // store comment in db
+     const increaseCommentsCount = await PostModel.updateOne({_id:postId},{$inc:{commentsCount:1}});
+     // increase comments count in that post document
+
+     if(!createComment && increaseCommentsCount.modifiedCount == 0) {
+        return res.status(400).json({message:"Comment is not posted try Again "});
+     }
+     
+     const {_id:commentId} = createComment;
+     return res.status(200).json({ success: true, commentId, message: 'Comment added successfully' });
+
+    }catch(error) {
+        res.status(500).json({message:"Internal Server Error"})
+    }
+}) // handles the logic of add comment to a post 
 
 
 
