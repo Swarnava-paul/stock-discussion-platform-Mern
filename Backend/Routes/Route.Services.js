@@ -12,6 +12,7 @@ ServiceRouter.use(express.json());
 // modules
 const sortFunction = require('../Modules/SortFunction');
 
+
 ServiceRouter.post('/',async(req,res)=>{
     try {
      const {user} = req;
@@ -185,5 +186,23 @@ ServiceRouter.delete('/:postId/comments/:commentId',async(req,res)=>{
     }
 }) // handles the logic of delete comment from a post
 
+ServiceRouter.get('/:postId',async(req,res)=>{
+
+    try{
+     const {postId} = req.params; 
+     const singlePost = await PostModel.findOne({_id:postId}); // get single post from db by using postId
+     const comments = await CommentModel.find({postId:postId}); // get all comments for that postId from comments collection
+
+     if(!singlePost){
+      return res.status(200).json({message:"No Post Found"})
+     } // no post there then
+
+     const {_id:post_Id, stockSymbol, title, description, likesCount} = singlePost; // descructure from singlePost object
+     return res.status(200).json({post_Id,stockSymbol,title,description,likesCount,comments})
+
+    }catch(error) {
+     res.status(500).json({message:"Internal Server Error"});
+    }
+}) // handles the logic of get a single post and all the comments to that post
 
 module.exports = ServiceRouter;
