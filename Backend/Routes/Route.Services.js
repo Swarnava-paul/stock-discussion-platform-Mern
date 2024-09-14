@@ -130,7 +130,7 @@ ServiceRouter.post('/:postId/comments',async(req,res)=>{
     try{
      const {comment} = req.body;
      const {postId} = req.params;
-     const {user:{_id,userId}} = req; // from middleware
+     const {user:{_id,userId}} = req; // // from authentication check  middleware
      const {profilePicture} = await UserModel.findOne({_id:_id}); //  retrive profile picture for storing comment
      // and userId with profile picture to display comment with user id with profile picture in front-end
 
@@ -163,6 +163,27 @@ ServiceRouter.post('/:postId/comments',async(req,res)=>{
     }
 }) // handles the logic of add comment to a post 
 
+ServiceRouter.delete('/:postId/comments/:commentId',async(req,res)=>{
+
+    try {
+       const {postId,commentId} = req.params;
+       const {user:{_id,userId}} = req; // from authentication check  middleware
+       
+       const deleteComment = await CommentModel.deleteOne({_id:commentId,commentBy:userId});
+       // only comment deleted if any user will want to delete his or her comment only
+       const decreaseCommentCount = await PostModel.updateOne({_id:postId},{$inc:{commentsCount:-1}});
+       // decrease comments count from db after delete comment
+
+       if(deleteComment.deletedCount == 0 && decreaseCommentCount.modifiedCount == 0) {
+        return res.status(400).json({message:"Failed To Delete"});
+       }
+
+       return res.status(200).json({ success: true, message: 'Comment deleted successfully' });
+
+    }catch(error) {
+        res.status(500).json({message:"Internal Server Error"})
+    }
+}) // handles the logic of delete comment from a post
 
 
 module.exports = ServiceRouter;
