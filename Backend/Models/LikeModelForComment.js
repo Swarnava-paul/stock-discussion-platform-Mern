@@ -4,6 +4,7 @@ const likeSchemaForComment = new mongoose.Schema({
  
     commentId :{type:String , required :true},
     likedBy : {type:String, required : true},
+    profilePicture :{type:String}
 
 },{versionKey:false});
 

@@ -5,6 +5,7 @@ const PostModel = require('../Models/PostModel');
 const UserModel = require('../Models/UserModel');
 const LikeModel = require('../Models/LikeModel');
 const CommentModel = require('../Models/CommentModel');
+const LikeModelForComment = require('../Models/LikeModelForComment');
 
 const ServiceRouter = express.Router();
 ServiceRouter.use(express.json());
@@ -205,4 +206,40 @@ ServiceRouter.get('/:postId',async(req,res)=>{
     }
 }) // handles the logic of get a single post and all the comments to that post
 
+ServiceRouter.post('/:commentId/likee',async(req,res)=>{
+    try{
+        const {commentId} = req.params;
+        const {user:{_id,userId}} = req ; // from checkAuthentication middleware
+  
+        const {profilePicture} = await UserModel.findOne({userId:userId}); // find user by user id and destructure profile picture
+        
+        const isAlreadyLikedOrNot = await LikeModelForComment.findOne({commentId:commentId,likedBy:userId}); 
+        // find user already liked a comment or not
+  
+        if(!isAlreadyLikedOrNot) {
+          const like = await LikeModelForComment.create({commentId,likedBy:userId,profilePicture});
+          const increaseLikeCountOnComment = await CommentModel.updateOne({_id:commentId},{$inc:{likes:1}});
+  
+          if(!like && increaseLikeCountOnComment.modifiedCount == 0) {
+              return res.status(200).json({message:"Failed To like This Comment"})
+          }
+          return res.status(200).json({Response:true,message:"Liked Successful"})
+        } // if no document found means user not liked that comment so like that post and store in db
+        else {
+          const unLikeComment = await LikeModelForComment.deleteOne({commentId:commentId,likedBy:userId});
+          const decreaseLikeCountFromComment = await CommentModel.updateOne({_id:commentId},{$inc:{likes:-1}});
+          
+          if(unLikeComment.deletedCount == 0 && decreaseLikeCountFromComment.modifiedCount == 0) {
+              return res.status(200).json({message:"Unlike not Successful"})
+          }
+          return res.status(200).json({message:"Unlike Successful",commentId});
+  
+        } // incase if user already liked a comment then unlike that comment the store in db
+  
+      }catch(error) {
+        res.status(500).json({message:"Internal Server Error"});
+      }
+}) // handles the logic of like or unlike any comment
+ 
 module.exports = ServiceRouter;
+
